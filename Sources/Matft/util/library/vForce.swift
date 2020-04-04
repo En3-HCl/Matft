@@ -11,7 +11,7 @@ import Accelerate
 
 internal typealias vForce_vv_func<T> = (UnsafeMutablePointer<T>, UnsafePointer<T>, UnsafePointer<Int32>) -> Void
 
-internal func math_vv_by_vForce<T: MfStorable>(_ mfarray: MfArray, _ vForce_func: vForce_vv_func<T>) -> MfArray{
+internal func math_vv_by_vForce<T: MfTypable, U: MfStorable>(_ mfarray: MfArray<T>, _ vForce_func: vForce_vv_func<U>) -> MfArray<T>{
     var mfarray = mfarray
     if !(mfarray.mfflags.column_contiguous || mfarray.mfflags.row_contiguous){//neither row nor column contiguous, close to row major
         mfarray = to_row_major(mfarray)
@@ -33,7 +33,7 @@ internal func math_vv_by_vForce<T: MfStorable>(_ mfarray: MfArray, _ vForce_func
 
 internal typealias vForce_1arg_vv_func<T> = (UnsafeMutablePointer<T>, UnsafePointer<T>, UnsafePointer<T>, UnsafePointer<Int32>) -> Void
 
-internal func math_1arg_vv_by_vForce<T: MfStorable>(_ mfarray: MfArray, _ arg: UnsafePointer<T>, _ vForce_func: vForce_1arg_vv_func<T>) -> MfArray{
+internal func math_1arg_vv_by_vForce<T: MfTypable, U: MfStorable>(_ mfarray: MfArray<T>, _ arg: UnsafePointer<U>, _ vForce_func: vForce_1arg_vv_func<U>) -> MfArray<T>{
     var mfarray = mfarray
     if !(mfarray.mfflags.column_contiguous || mfarray.mfflags.row_contiguous){//neither row nor column contiguous, close to row major
         mfarray = to_row_major(mfarray)

@@ -79,28 +79,24 @@ internal func array2UnsafeMPtrT<T: MfTypable>(_ array: inout [T]) -> UnsafeMutab
 /**
    - Important: this function allocate new memory, so don't forget deallocate!
 */
-internal func flattenarray2UnsafeMRPtr_viaForD(_ flattenarray: inout [Any], mftypeBool: Bool) -> (ptr: UnsafeMutableRawPointer, mftype: MfType) {
-    
+internal func flattenarray2UnsafeMRPtr_viaForD<MfType: MfTypable>(_ flattenarray: inout [MfType]) -> UnsafeMutableRawPointer {
     let ptrF = create_unsafeMPtrT(type: Float.self, count: flattenarray.count)
-    var mftype = MfType.None
+
     //UInt
     if let flattenarray = flattenarray as? [UInt8]{
         flattenarray.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vfltu8, flattenarray.count)
         }
-        mftype = .UInt8
     }
     else if let flattenarray = flattenarray as? [UInt16]{
         flattenarray.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vfltu16, flattenarray.count)
         }
-        mftype = .UInt16
     }
     else if let flattenarray = flattenarray as? [UInt32]{
         flattenarray.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vfltu32, flattenarray.count)
         }
-        mftype = .UInt32
     }
     else if let flattenarray = flattenarray as? [UInt64]{
         //convert uint64 to uint32
@@ -109,7 +105,6 @@ internal func flattenarray2UnsafeMRPtr_viaForD(_ flattenarray: inout [Any], mfty
         flatten32array.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vfltu32, flattenarray.count)
         }
-        mftype = .UInt64
     }
     else if let flattenarray = flattenarray as? [UInt]{
         //convert uint to uint32
@@ -120,26 +115,22 @@ internal func flattenarray2UnsafeMRPtr_viaForD(_ flattenarray: inout [Any], mfty
         flatten32array.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vfltu32, flattenarray.count)
         }
-        mftype = .UInt
     }
     //Int
     else if let flattenarray = flattenarray as? [Int8]{
         flattenarray.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vflt8, flattenarray.count)
         }
-        mftype = .Int8
     }
     else if let flattenarray = flattenarray as? [Int16]{
         flattenarray.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vflt16, flattenarray.count)
         }
-        mftype = .Int16
     }
     else if let flattenarray = flattenarray as? [Int32]{
         flattenarray.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vflt32, flattenarray.count)
         }
-        mftype = .Int32
     }
     else if let flattenarray = flattenarray as? [Int64]{
         //convert int64 to int32
@@ -148,7 +139,6 @@ internal func flattenarray2UnsafeMRPtr_viaForD(_ flattenarray: inout [Any], mfty
         flatten32array.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vflt32, flattenarray.count)
         }
-        mftype = .Int64
     }
     else if let flattenarray = flattenarray as? [Int]{
         //convert int to int32
@@ -157,13 +147,11 @@ internal func flattenarray2UnsafeMRPtr_viaForD(_ flattenarray: inout [Any], mfty
         flatten32array.withUnsafeBufferPointer{
             unsafePtrT2UnsafeMPtrU($0.baseAddress!, ptrF, vDSP_vflt32, flattenarray.count)
         }
-        mftype = .Int
     }
     else if var flattenarray = flattenarray as? [Float]{
         let _ = flattenarray.withUnsafeMutableBufferPointer{
             ptrF.assign(from: $0.baseAddress!, count: $0.count)
         }
-        mftype = .Float
     }
     else if let flattenarray = flattenarray as? [Bool]{
         //convert bool to float
@@ -172,7 +160,6 @@ internal func flattenarray2UnsafeMRPtr_viaForD(_ flattenarray: inout [Any], mfty
         let _ = flattenBoolarray.withUnsafeMutableBufferPointer{
             ptrF.moveAssign(from: $0.baseAddress!, count: $0.count)
         }
-        mftype = .Bool
     }
     else if var flattenarray = flattenarray as? [Double]{
         ptrF.deinitialize(count: flattenarray.count)
@@ -182,23 +169,13 @@ internal func flattenarray2UnsafeMRPtr_viaForD(_ flattenarray: inout [Any], mfty
         let _ = flattenarray.withUnsafeMutableBufferPointer{
             ptrD.assign(from: $0.baseAddress!, count: $0.count)
         }
-        mftype = .Double
         
-        if mftypeBool{
-            _T2Binary(UnsafeMutableBufferPointer(start: ptrD, count: flattenarray.count))
-            mftype = .Bool
-        }
-        
-        return (UnsafeMutableRawPointer(ptrD), mftype)
+        return UnsafeMutableRawPointer(ptrD)
     }
     else{
         fatalError("Cannot cast flattenarray")
     }
-    
-    if mftypeBool{
-        _T2Binary(UnsafeMutableBufferPointer(start: ptrF, count: flattenarray.count))
-        mftype = .Bool
-    }
+
     
     //create raw pointer
     let ret = UnsafeMutableRawPointer(ptrF)
@@ -207,7 +184,7 @@ internal func flattenarray2UnsafeMRPtr_viaForD(_ flattenarray: inout [Any], mfty
     //ptrF.deinitialize(count: flattenarray.count)
     //ptrF.deallocate()
     
-    return (ret, mftype)
+    return ret
 }
 
 fileprivate func _T2Binary<T: MfStorable>(_ ptrT: UnsafeMutableBufferPointer<T>){

@@ -19,7 +19,7 @@ internal func unsafePtrT2UnsafeMPtrU<T: MfTypable, U: MfTypable>(_ srcptr: Unsaf
 fileprivate func _run_preop<T: MfTypable, U: MfTypable>(_ srcptr: UnsafePointer<T>,  _ dstptr: UnsafeMutablePointer<U>, _ count: Int, _ vDSP_func: vDSP_convert_func<T, U>){
     vDSP_func(srcptr, vDSP_Stride(1), dstptr, vDSP_Stride(1), vDSP_Length(count))
 }
-internal func preop_by_vDSP<T: MfStorable>(_ mfarray: MfArray, _ vDSP_func: vDSP_convert_func<T, T>) -> MfArray{
+internal func preop_by_vDSP<T: MfTypable, U: MfStorable>(_ mfarray: MfArray<T>, _ vDSP_func: vDSP_convert_func<U, U>) -> MfArray<T>{
     //return mfarray must be either row or column major
     var mfarray = mfarray
     //print(mfarray)
@@ -50,7 +50,7 @@ fileprivate func _run_biop_vs<T: MfStorable>(_ srcptr: UnsafePointer<T>, _ scala
     vDSP_func(srcptr, vDSP_Stride(1), &scalar, dstptr, vDSP_Stride(1), vDSP_Length(count))
 }
 
-internal func biop_vs_by_vDSP<T: MfStorable>(_ l_mfarray: MfArray, _ r_scalar: T, _ vDSP_func: vDSP_biop_vs_func<T>) -> MfArray{
+internal func biop_vs_by_vDSP<T: MfTypable, U: MfStorable>(_ l_mfarray: MfArray<T>, _ r_scalar: U, _ vDSP_func: vDSP_biop_vs_func<U>) -> MfArray<T>{
     var mfarray = l_mfarray
 
     if !(mfarray.mfflags.column_contiguous || mfarray.mfflags.row_contiguous){//neither row nor column contiguous, close to row major
@@ -77,7 +77,7 @@ fileprivate func _run_biop_sv<T: MfStorable>(_ scalar: T, _ srcptr: UnsafePointe
     vDSP_func(&scalar, srcptr, vDSP_Stride(1), dstptr, vDSP_Stride(1), vDSP_Length(count))
 }
 
-internal func biop_sv_by_vDSP<T: MfStorable>(_ l_scalar: T, _ r_mfarray: MfArray, _ vDSP_func: vDSP_biop_sv_func<T>) -> MfArray{
+internal func biop_sv_by_vDSP<T: MfTypable, U: MfStorable>(_ l_scalar: U, _ r_mfarray: MfArray<T>, _ vDSP_func: vDSP_biop_sv_func<U>) -> MfArray<T>{
     var mfarray = r_mfarray
 
     if !(mfarray.mfflags.column_contiguous || mfarray.mfflags.row_contiguous){//neither row nor column contiguous, close to row major
@@ -104,7 +104,7 @@ fileprivate func _run_biop_vv<T: MfStorable>(lptr: UnsafePointer<T>, _ lstride: 
     vDSP_func(rptr, vDSP_Stride(rstride), lptr, vDSP_Stride(lstride), dstptr, vDSP_Stride(dststride), vDSP_Length(blockSize))
 }
 
-internal func biop_vv_by_vDSP<T: MfStorable>(_ l_mfarray: MfArray, _ r_mfarray: MfArray, vDSP_func: vDSP_biop_vv_func<T>) -> MfArray{
+internal func biop_vv_by_vDSP<T: MfTypable, U: MfStorable>(_ l_mfarray: MfArray<T>, _ r_mfarray: MfArray<T>, vDSP_func: vDSP_biop_vv_func<U>) -> MfArray<T>{
     let biggerL: Bool // flag whether l is bigger than r
     let retstoredSize: Int
     var l_mfarray = l_mfarray
@@ -124,7 +124,7 @@ internal func biop_vv_by_vDSP<T: MfStorable>(_ l_mfarray: MfArray, _ r_mfarray: 
     }
     
     
-    let newdata = withDummyDataMRPtr(l_mfarray.mftype, storedSize: retstoredSize){
+    let newdata = withDummyDataMRPtr(T.self, storedSize: retstoredSize){
         dstptr in
         let dstptrT = dstptr.bindMemory(to: T.self, capacity: retstoredSize)
         
@@ -167,7 +167,7 @@ fileprivate func _stats_run<T: MfStorable>(_ srcptr: UnsafePointer<T>, _ dstptr:
 }
 
 // for along given axis
-internal func stats_axis_by_vDSP<T: MfStorable>(_ mfarray: MfArray, axis: Int, vDSP_func: vDSP_stats_func<T>) -> MfArray{
+internal func stats_axis_by_vDSP<T: MfTypable, U: MfStorable>(_ mfarray: MfArray<T>, axis: Int, vDSP_func: vDSP_stats_func<U>) -> MfArray<T>{
     var retShape = mfarray.shape
     let count = retShape.remove(at: axis)
     var retStrides = mfarray.strides
@@ -177,7 +177,7 @@ internal func stats_axis_by_vDSP<T: MfStorable>(_ mfarray: MfArray, axis: Int, v
     
     let retndim = retShape.count
 
-    let ret = withDummy(mftype: mfarray.mftype, storedSize: mfarray.storedSize, ndim: retndim){
+    let ret = withDummy(mftype: T.self, storedSize: mfarray.storedSize, ndim: retndim){
         dataptr, shapeptr, stridesptr in
 
         //move
@@ -209,14 +209,14 @@ internal func stats_axis_by_vDSP<T: MfStorable>(_ mfarray: MfArray, axis: Int, v
 }
 
 // for all elements
-internal func stats_all_by_vDSP<T: MfStorable>(_ mfarray: MfArray, vDSP_func: vDSP_stats_func<T>) -> MfArray{
-    var dst = T.zero
+internal func stats_all_by_vDSP<T: MfTypable, U: MfStorable>(_ mfarray: MfArray<T>, vDSP_func: vDSP_stats_func<U>) -> MfArray<T>{
+    var dst = U.zero
     mfarray.withDataUnsafeMBPtrT(datatype: T.self){
         [unowned mfarray] in
         _stats_run($0.baseAddress!, &dst, vDSP_func: vDSP_func, stride: 1, mfarray.size)
     }
     
-    return MfArray([dst], mftype: mfarray.mftype)
+    return MfArray([dst])
 }
 
 
@@ -231,7 +231,7 @@ fileprivate func _stats_index_run<T: MfStorable>(_ srcptr: UnsafePointer<T>, vDS
 }
 
 //for along given axis
-internal func stats_index_axis_by_vDSP<T: MfStorable>(_ mfarray: MfArray, axis: Int, vDSP_func: vDSP_stats_index_func<T>) -> MfArray{
+internal func stats_index_axis_by_vDSP<T: MfTypable, U: MfStorable>(_ mfarray: MfArray<T>, axis: Int, vDSP_func: vDSP_stats_index_func<U>) -> MfArray<T>{
     var retShape = mfarray.shape
     let count = retShape.remove(at: axis)
     var retStrides = mfarray.strides
@@ -283,7 +283,7 @@ internal func stats_index_axis_by_vDSP<T: MfStorable>(_ mfarray: MfArray, axis: 
 }
 
 // for all elements
-internal func stats_index_all_by_vDSP<T: MfStorable>(_ mfarray: MfArray, vDSP_func: vDSP_stats_index_func<T>) -> MfArray{
+internal func stats_index_all_by_vDSP<T: MfTypable, U: MfStorable>(_ mfarray: MfArray<T>, vDSP_func: vDSP_stats_index_func<U>) -> MfArray<T>{
 
     let dst = mfarray.withDataUnsafeMBPtrT(datatype: T.self){
         [unowned mfarray] in

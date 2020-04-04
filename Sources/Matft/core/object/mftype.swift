@@ -7,7 +7,7 @@
 //
 
 import Foundation
-
+/*
 public enum MfType: Int{
     case None
     case Bool
@@ -88,10 +88,28 @@ public enum MfType: Int{
         
     //}
 }
-
+*/
 public enum StoredType: Int{
     case Float
     case Double
+    /*
+    static internal func storedType<T: MfTypable>(_ mftype: T.Type) -> StoredType{
+        switch mftype {
+        case is Double.Type:
+            return .Double
+        default: // all mftypes are stored as float except for double
+            return .Float
+        }
+    }*/
+    init<T: MfTypable>(_ mftype: T.Type) {
+        
+        switch mftype {
+        case is Double.Type:
+            self = .Double
+        default: // all mftypes are stored as float except for double
+            self = .Float
+        }
+    }
     
     static public func priority(_ a: StoredType, _ b: StoredType) -> StoredType{
         if a.rawValue < b.rawValue{
@@ -102,3 +120,4 @@ public enum StoredType: Int{
         }
     }
 }
+

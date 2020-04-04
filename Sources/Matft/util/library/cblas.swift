@@ -16,7 +16,7 @@ internal func copy_unsafeptrT<T>(_ size: Int, _ srcptr: UnsafePointer<T>, _ srcS
     cblas_func(Int32(size), srcptr, Int32(srcStride), dstptr, Int32(dstStride))
 }
 
-internal func copy_by_cblas<T: MfStorable>(_ mfarray: MfArray, dsttmpMfarray: MfArray, cblas_func: cblas_convorder_func<T>) -> MfArray{
+internal func copy_by_cblas<T: MfTypable, U: MfStorable>(_ mfarray: MfArray<T>, dsttmpMfarray: MfArray<T>, cblas_func: cblas_convorder_func<U>) -> MfArray<T>{
     
     
     dsttmpMfarray.withDataUnsafeMBPtrT(datatype: T.self){

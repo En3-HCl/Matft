@@ -76,25 +76,25 @@ internal func withDummyShapeStridesMPtr(_ ndim: Int, _ body: (UnsafeMutablePoint
     return MfStructure(shapeptr: dummyShapePtr, stridesptr: dummyStridesPtr, ndim: ndim)
 }
 
-internal func withDummyDataMRPtr(_ mftype: MfType, storedSize: Int, _ body: (UnsafeMutableRawPointer) throws -> Void) rethrows -> MfData{
+internal func withDummyDataMRPtr<T: MfTypable>(_ mftype: T.Type, storedSize: Int, _ body: (UnsafeMutableRawPointer) throws -> Void) rethrows -> MfData<T>{
     
-    switch MfType.storedType(mftype) {
+    switch StoredType(mftype) {
     case .Float:
         let dummyDataPtr = create_unsafeMRPtr(type: Float.self, count: storedSize)
 
         try body(dummyDataPtr)
         
-        return MfData(dataptr: dummyDataPtr, storedSize: storedSize, mftype: mftype)
+        return MfData(dataptr: dummyDataPtr, storedSize: storedSize)
     case .Double:
         let dummyDataPtr = create_unsafeMRPtr(type: Double.self, count: storedSize)
         
         try body(dummyDataPtr)
         
-        return MfData(dataptr: dummyDataPtr, storedSize: storedSize, mftype: mftype)
+        return MfData(dataptr: dummyDataPtr, storedSize: storedSize)
     }
 }
 
-internal func withDummy(mftype: MfType, storedSize: Int, ndim: Int, _ body: (UnsafeMutableRawPointer, UnsafeMutableBufferPointer<Int>, UnsafeMutableBufferPointer<Int>) throws -> Void) rethrows -> MfArray{
+internal func withDummy<T: MfTypable>(mftype: T.Type, storedSize: Int, ndim: Int, _ body: (UnsafeMutableRawPointer, UnsafeMutableBufferPointer<Int>, UnsafeMutableBufferPointer<Int>) throws -> Void) rethrows -> MfArray<T>{
     let dummyShapePtr = UnsafeMutableBufferPointer(start: create_unsafeMPtrT(type: Int.self, count: ndim), count: ndim)
     let dummyStridesPtr = UnsafeMutableBufferPointer(start: create_unsafeMPtrT(type: Int.self, count: ndim), count: ndim)
     

@@ -9,7 +9,7 @@
 import Foundation
 import Accelerate
 
-internal func flatten_array(ptr: UnsafeBufferPointer<Any>, mforder: inout MfOrder) -> (flatten: [Any], shape: [Int]){
+internal func flatten_array<MfType: MfTypable>(ptr: UnsafeBufferPointer<Any>, mforder: inout MfOrder) -> (flatten: [MfType], shape: [Int]){
     var shape: [Int] = [ptr.count]
     var queue = ptr.compactMap{ $0 }
     
@@ -25,7 +25,7 @@ internal func flatten_array(ptr: UnsafeBufferPointer<Any>, mforder: inout MfOrde
 
 //row major order
 //breadth-first search
-fileprivate func _get_flatten_row_major(queue: inout [Any], shape: inout [Int]) -> [Any]{
+fileprivate func _get_flatten_row_major<MfType: MfTypable>(queue: inout [Any], shape: inout [Int]) -> [MfType]{
     precondition(shape.count == 1, "shape must have only one element")
     var cnt = 0 // count up the number that value is extracted from queue for while statement, reset 0 when iteration number reaches size
     var size = queue.count
@@ -61,11 +61,11 @@ fileprivate func _get_flatten_row_major(queue: inout [Any], shape: inout [Int]) 
         }
     }
     
-    return queue
+    return queue as! [MfType]
 }
 
 //column major order
-fileprivate func _get_flatten_column_major(queue: inout [Any], shape: inout [Int]) -> [Any]{
+fileprivate func _get_flatten_column_major<MfType: MfTypable>(queue: inout [Any], shape: inout [Int]) -> [MfType]{
     //precondition(shape.count == 1, "shape must have only one element")
     var cnt = 0 // count up the number that value is extracted from queue for while statement, reset 0 when iteration number reaches size
     //var axis = 0//the axis in searching
@@ -100,7 +100,7 @@ fileprivate func _get_flatten_column_major(queue: inout [Any], shape: inout [Int
             
         }
         else{ // value was detected. this means queue in this case becomes flatten array
-            return queue
+            return queue as! [MfType]
         }
         
         let _ = queue.removeFirst()
@@ -111,7 +111,7 @@ fileprivate func _get_flatten_column_major(queue: inout [Any], shape: inout [Int
         return _get_flatten_column_major(queue: &newqueue, shape: &shape)
     }
     else{
-        return newqueue
+        return newqueue as! [MfType]
     }
 }
 
@@ -168,7 +168,7 @@ fileprivate func _recurrsion_flatten(elements: Any, mftype : inout MfType, shape
 /**
     - Important: strides must be checked before calling this function
  */
-internal func copyAll(_ mfarray: MfArray) -> MfArray{
+internal func copyAll<T: MfTypable>(_ mfarray: MfArray<T>) -> MfArray<T>{
     let newmfdata = withDummyDataMRPtr(mfarray.mftype, storedSize: mfarray.storedSize){
         dstptr in
         mfarray.withDataUnsafeMRPtr{
@@ -190,7 +190,7 @@ internal func copyAll(_ mfarray: MfArray) -> MfArray{
     return MfArray(mfdata: newmfdata, mfstructure: newmfstructure)
 }
 
-internal func to_row_major(_ mfarray: MfArray) -> MfArray{
+internal func to_row_major<T: MfTypable>(_ mfarray: MfArray<T>) -> MfArray<T>{
     if mfarray.mfflags.row_contiguous{
         return copyAll(mfarray)
     }
@@ -223,7 +223,7 @@ internal func to_row_major(_ mfarray: MfArray) -> MfArray{
     
 }
 
-internal func to_column_major(_ mfarray: MfArray) -> MfArray{
+internal func to_column_major<T: MfTypable>(_ mfarray: MfArray<T>) -> MfArray<T>{
     if mfarray.mfflags.column_contiguous{
         return copyAll(mfarray)
     }
